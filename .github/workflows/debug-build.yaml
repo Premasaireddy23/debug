@@ -19,7 +19,7 @@ concurrency:
 env:
   ACR_NAME: acresenditdevesendit000
   ACR_LOGIN_SERVER: acresenditdevesendit000.azurecr.io
-  BACKEND_CTX: backend
+  BACKEND_CTX: .
 
 jobs:
   build_push:
