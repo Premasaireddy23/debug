@@ -51,6 +51,8 @@ RUN npm config set update-notifier false && \
     npm i -g prisma@${PRISMA_VERSION} && \
     prisma -v
 
+COPY prisma /work/prisma
+
 EXPOSE 5555
 
 RUN useradd -ms /bin/bash debug && mkdir -p /work && chown -R debug:debug /work
