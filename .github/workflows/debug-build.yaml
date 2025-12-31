@@ -1,0 +1,58 @@
+name: debug-build-push
+
+on:
+  push:
+    branches: ["main"]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: esendit-dev-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ACR_NAME: acresenditdevesendit000
+  ACR_LOGIN_SERVER: acresenditdevesendit000.azurecr.io
+  BACKEND_CTX: backend
+
+jobs:
+  build_push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set image tag
+        run: echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to ACR
+        run: az acr login -n $ACR_NAME
+
+      - name: Build & push images (avoid rebuilding workers if same Dockerfile)
+        run: |
+          set -euo pipefail
+
+          echo "TAG=$TAG"
+          echo "ACR=$ACR_LOGIN_SERVER"
+
+          # 1) Build backend once
+          docker build \
+            -t "$ACR_LOGIN_SERVER/esendit-debug:$TAG" \
+            -f "$BACKEND_CTX/Dockerfile" \
+            "$BACKEND_CTX"
+
+          docker push "$ACR_LOGIN_SERVER/esendit-debug:$TAG"
+
+          echo "✅ Pushed DEV images with tag: $TAG"
