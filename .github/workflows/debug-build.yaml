@@ -40,19 +40,20 @@ jobs:
       - name: Login to ACR
         run: az acr login -n $ACR_NAME
 
-      - name: Build & push images (avoid rebuilding workers if same Dockerfile)
+      - name: Build & push images (tag sha + latest)
         run: |
           set -euo pipefail
 
           echo "TAG=$TAG"
           echo "ACR=$ACR_LOGIN_SERVER"
 
-          # 1) Build backend once
           docker build \
             -t "$ACR_LOGIN_SERVER/esendit-debug:$TAG" \
+            -t "$ACR_LOGIN_SERVER/esendit-debug:latest" \
             -f "$BACKEND_CTX/Dockerfile" \
             "$BACKEND_CTX"
 
           docker push "$ACR_LOGIN_SERVER/esendit-debug:$TAG"
+          docker push "$ACR_LOGIN_SERVER/esendit-debug:latest"
 
-          echo "✅ Pushed DEV images with tag: $TAG"
+          echo "✅ Pushed images: $TAG and latest"
